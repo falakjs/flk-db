@@ -1,0 +1,26 @@
+{
+    "name": "@flk/db",
+    "description": "Cache engine to store data in IndexedDB.",
+    "version": "1.0.0",
+    "main": "dist/CacheEngine.js",
+    "dependencies": {
+        "localforage": "^1.7.3"
+    },
+    "mainFiles": {
+        "localforage": "dist/localforage.min.js"
+    },
+    "keywords": [
+        "cache",
+        "IndexedDB",
+        "javascript",
+        "flk"
+    ],
+    "author": {
+        "email": "hassanzohdy@gmail.com",
+        "name": "Hasan Zohdy"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/falakjs/db"
+    }
+}
