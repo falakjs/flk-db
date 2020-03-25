@@ -1,111 +1,95 @@
 class IndexedDBEngine {
-    /**
-    * Constructor
-    */
-    constructor() {}
+  /**
+   * Constructor
+   */
+  constructor() {
+    this.set = this.set.bind(this);
+    this.storage = window.localforage;
+  }
 
-    /**
-    * Initialize the class
-    *
-    */
-    init() {
-        this.storage = window.localforage;
+  /**
+   * Initialize the class
+   *
+   */
+  init() {}
+
+  /**
+   * Set the value for the given key
+   *
+   * @param string key
+   * @param mixed value
+   * @param int expiresAt Timestamp in milliseconds
+   * @return this
+   */
+  async set(key, value, expiresAt = IndexedDBEngine.FOREVER) {
+    let settings = {
+      data: value,
+      expiresAt: expiresAt
+    };
+
+    return await this.storage.setItem(key, settings);
+  }
+
+  /**
+   * Get value for the given key
+   *
+   * @param string keydecryptedSettings
+   * @param mixed defaultValue
+   * @return mixed
+   */
+  async get(key, defaultValue = null) {
+    let settings = await this.storage.getItem(key);
+
+    if (!settings) return defaultValue;
+
+    try {
+      if (!settings) {
+        this.remove(key);
+        return defaultValue;
+      }
+    } catch (e) {
+      this.remove(key);
+      return defaultValue;
     }
 
-    /**
-    * Set the value for the given key
-    *
-    * @param string key
-    * @param mixed value
-    * @param int expiresAt Timestamp in milliseconds
-    * @return this
-    */
-    set(key, value, expiresAt = Cache.FOREVER) {
-        let settings = {
-            data: value,
-            expiresAt: expiresAt,
-        };
+    if (settings.expiresAt && settings.expiresAt < Date.now()) {
+      this.remove(key);
 
-        value = this.encryptValues ? this.crypto.encrypt(settings) : JSON.stringify(settings);
-
-        this.storage.setItem(this.key(key), value);
-
-        return this;
+      return defaultValue;
     }
 
-    /**
-    * Get value for the given key
-    *
-    * @param string key
-    * @param mixed defaultValue
-    * @return mixed
-    */
-    get(key, defaultValue = null) {
-        let settings = this.storage.getItem(this.key(key));
+    return settings.data;
+  }
 
-        if (!settings) return defaultValue;
-        
-        let decryptedSettings;
-        
-        try {
-            decryptedSettings = this.encryptValues ? this.crypto.decrypt(settings) : JSON.parse(settings);
+  /**
+   * Determine if the given key exists in cache
+   *
+   * @param string key
+   * @return bool
+   */
+  async has(key) {
+    let value = await this.get(key);
+    return !!value;
+  }
 
-            if (!decryptedSettings) {
-                this.remove(key);
-                return defaultValue;
-            }
-        } catch (e) {
-            this.remove(key);
-            return defaultValue;
-        }
+  /**
+   * Remove the given key from cache
+   *
+   * @param string key
+   * @return void
+   */
+  remove(key) {
+    return this.storage.removeItem(key);
+  }
 
-        if (decryptedSettings.expiresAt && decryptedSettings.expiresAt < Date.now()) {
-            this.remove(key);
-
-            return defaultValue;
-        }
-
-        return decryptedSettings.data;
-    }
-
-    /**
-    * Determine if the given key exists in cache
-    *
-    * @param string key
-    * @return bool
-    */
-    has(key) {
-        return this.get(key, null) !== null;
-    }
-
-    /**
-    * Remove the given key from cache
-    *
-    * @param string key
-    * @return void
-    */
-    remove(key) {
-        this.storage.removeItem(this.key(key));
-    }
-
-    /**
-    * Clear the cache repository
-    *
-    * @return void
-    */
-    clear() {
-        this.storage.clear();
-    }
-
-    /**
-    * Get the full key name as it will be compiled with the current app name
-    *
-    */
-    key(key) {
-        let cacheKey = key;
-
-        return cacheKey;
-    }
+  /**
+   * Clear the cache repository
+   *
+   * @return void
+   */
+  clear() {
+    return this.storage.clear();
+  }
 }
 
 IndexedDBEngine.FOREVER = 0;
@@ -116,6 +100,6 @@ IndexedDBEngine.FOR_ONE_MONTH = IndexedDBEngine.FOR_ONE_DAY * 30;
 IndexedDBEngine.FOR_ONE_YEAR = IndexedDBEngine.FOR_ONE_MONTH * 12;
 
 DI.register({
-    class: IndexedDBEngine,
-    alias: 'db',
+  class: IndexedDBEngine,
+  alias: "db"
 });

@@ -1,17 +1,19 @@
-# IndexedDB Cache Engine
-The cache system is built on [LocaleStorage API](https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage).
+# IndexedDB db Engine
+
+The db system is built on [LocaleForage API](https://localforage.github.io/localForage). It's a promise based package.
 
 # Installation
-`flk install flk-cache`
 
-OR 
+`flk install @flk/db`
 
-`npm install flk-cache`
+OR
 
-Alias: `cache`.
+`npm install @flk/db`
+
+Alias: `db`.
 
 # Table of contents
-- [Cache](#cache)
+
 - [Installation](#installation)
 - [Table of contents](#table-of-contents)
 - [Usage](#usage)
@@ -26,27 +28,25 @@ Alias: `cache`.
     - [Examples](#examples-3)
   - [Clear](#clear)
     - [Examples](#examples-4)
-- [Configurations](#configurations)
 - [Constants](#constants)
-
 
 # Usage
 
-Once you resolve the cache object you can use the methods below.
+Once you resolve the db object you can use the methods below.
 
 ```javascript
-
 class HomePage {
-    /**
-     * {@inheritDoc}
-     */
-    constructor(cache) {
-        this.cache = cache;
-    } 
+  /**
+   * {@inheritDoc}
+   */
+  constructor(db) {
+    this.db = db;
+  }
 }
 ```
 
 # Available methods
+
 - [set](#set)
 - [get](#get)
 - [has](#has)
@@ -55,84 +55,126 @@ class HomePage {
 
 ## Set
 
-`set(key: String, value: any, expiresAt: Number = Cache.FOREVER): Self`
+`set(key: String, value: any, expiresAt: Number = IndexedDBEngine.FOREVER): Self`
 
-This method accepts any type of values, the cache engine will handle it automatically, so if you want to store object, you don't have to `JSON.stringify` it, the package will take care of it.
+This method accepts any type of values, the db engine will handle it automatically, so if you want to store object, you don't have to `JSON.stringify` it, the package will take care of it.
 
 The `expiresAt` parameter is used to determine until when the value should be stored in.
 
 > Please note that this method accepts a valid timestamp number, i.e `Date.now()`.
 
-The default value for `expiresAt` is set to **Cache.FOREVER** which mean the value will not be removed from the cache until the user clears the browser history.
+The default value for `expiresAt` is set to **IndexedDBEngine.FOREVER** which mean the value will not be removed from the db until the user clears the browser history.
 
-There are some [useful constants for cache expiration time](#constants).
+There are some [useful constants for db expiration time](#constants).
 
 ### Examples
 
 ```javascript
-let cache = DI.resolve('cache');
+let db = DI.resolve("db");
 
-cache.set('name', 'Hasan');
+db.set("name", "Hasan")
+  .then(function(value) {
+    // Do other things once the value has been saved.
+    console.log(value);
+  })
+  .catch(function(err) {
+    // This code runs if there were any errors
+    console.log(err);
+  });
 
 // It can also store objects
 let user = {
-    name: 'Hasan',
-    address: 'Some street address',
+  name: "Hasan",
+  address: "Some street address"
 };
 
-cache.set('user', user);
+db.set("user", user)
+  .then(function(value) {
+    // This will output the `user` object.
+    console.log(value);
+  })
+  .catch(function(err) {
+    // This code runs if there were any errors
+    console.log(err);
+  });
 
 // storing arrays is acceptable as well
-let users = [{
-    name: 'Hasan',
-    address: 'Some street address',
-}, {
-    name: 'John Doe',
-    address: 'Another address',
-}];
+let users = [
+  {
+    name: "Hasan",
+    address: "Some street address"
+  },
+  {
+    name: "John Doe",
+    address: "Another address"
+  }
+];
 
-cache.set('users', users);
+db.set("users", users)
+  .then(function(value) {
+    // This will output the first item in the `users` array.
+    console.log(value[0]);
+  })
+  .catch(function(err) {
+    // This code runs if there were any errors
+    console.log(err);
+  });
 
-// cache for one hour
-cache.set('accessToken', MyAccessToken, Cache.FOR_ONE_HOUR);11
+// db for one hour
+db.set("accessToken", MyAccessToken, db.FOR_ONE_HOUR)
+  .then(function(value) {
+    console.log(value);
+  })
+  .catch(function(err) {
+    // This code runs if there were any errors
+    console.log(err);
+  });
 ```
 
 ## Get
 
 `get(key: String, defaultValue: any = null): any|null`
 
-Retrieve value from cache.
+Retrieve value from db.
 
 If the key doesn't exist, `defaultValue` will be returned instead.
 
 ### Examples
 
 ```javascript
-let cache = DI.resolve('cache');
+let db = DI.resolve("db");
 
 // if the given key exists
-let name = cache.get('name'); // Hasan
+let name = db.get("name").then(data => {
+  console.log(data); // Hasan
+});
 
 // if the given key doesn't exists, return null
-let age = cache.get('age'); // null
+let age = db.get("age").then(data => {
+  console.log(data); // null
+});
 
 // if the given key doesn't exists, return the given default value instead.
-let email = cache.get('email', 'my-email@sitename.com'); // my-email@sitename.com
+let email = db.get("email", "my-email@sitename.com").then(data => {
+  console.log(data); // my-email@sitename.com
+});
 ```
 
 ## Has
 
 `has(key: String): Boolean`
 
-Determine if the given key exists in cache.
+Determine if the given key exists in db.
 
 ### Examples
 
 ```javascript
-let cache = DI.resolve('cache');
+let db = DI.resolve("db");
 
-if (cache.has('name')) {
-    // do something
+let ifKeyExists = await db.has("name");
+
+if (ifKeyExists) {
+  // do something
 }
 ```
 
@@ -140,50 +182,42 @@ if (cache.has('name')) {
 
 `remove(key: String): void`
 
-Remove the given key if exists in cache storage.
+Remove the given key if exists in db storage.
 
 ### Examples
 
 ```javascript
-let cache = DI.resolve('cache');
+let db = DI.resolve("db");
 
-cache.remove('name');
-
+db.remove("name").then(() => {
+  console.log("Removed");
+});
 ```
 
 ## Clear
 
 `clear(): void`
 
-Clear all cache values.
+Clear all db values.
 
 ### Examples
 
 ```javascript
-let cache = DI.resolve('cache');
+let db = DI.resolve("db");
 
-cache.clear();
+db.clear().then(() => {
+  console.log("Cleared");
+});
 ```
-
-# Configurations
-Available configurations for `cache` in [Application configurations](https://github.com/falakjs/flk-config).
-
-**Main Configuration key**: `cache`
-
-| key           | Type      | Default value | Description                                                                            |
-| ------------- | --------- | ------------- | -------------------------------------------------------------------------------------- |
-| encryptValues | `Boolean` | **true**      | If set to `true`, any value will be encrypted using the [Crypto](https://github.com/falakjs/flk-crypto) package. |
-
-> It's recommended to set the type of the **encryptionValue** in your `config.js` in the beginning of your application development as it works on all the cached values.
 
 # Constants
 
-| constant              | Description                                                   |
-| --------------------- | ------------------------------------------------------------- |
-| `Cache.FOR_ONE_HOUR`  | Cache the value for one hour.                                 |
-| `Cache.FOR_TWO_HOURS` | Cache the value for two hours.                                |
-| `Cache.FOR_ONE_DAY`   | Cache the value for one day.                                  |
-| `Cache.FOR_ONE_WEEK`  | Cache the value for one week.                                 |
-| `Cache.FOR_ONE_MONTH` | Cache the value for one month.                                |
-| `Cache.FOR_ONE_YEAR`  | Cache the value for one year.                                 |
-| `Cache.FOREVER`       | Cache the value until the visitor clears the browser history. |
+| constant           | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `IndexedDBEngine.FOR_ONE_HOUR`  | db the value for one hour.                                 |
+| `IndexedDBEngine.FOR_TWO_HOURS` | db the value for two hours.                                |
+| `IndexedDBEngine.FOR_ONE_DAY`   | db the value for one day.                                  |
+| `IndexedDBEngine.FOR_ONE_WEEK`  | db the value for one week.                                 |
+| `IndexedDBEngine.FOR_ONE_MONTH` | db the value for one month.                                |
+| `IndexedDBEngine.FOR_ONE_YEAR`  | db the value for one year.                                 |
+| `IndexedDBEngine.FOREVER`       | db the value until the visitor clears the browser history. |
